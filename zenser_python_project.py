@@ -37,18 +37,11 @@ class RequestHandler(BaseHTTPRequestHandler):
                         result = cursor.fetchall()
                     elif self.path.startswith("/recommend/"):
                         # Fetch recommendations for a user
-                        user_id = self.path.split("/")[-1]
-                        cursor.execute("""
-                            SELECT m.movie_id, m.title 
-                            FROM movies m
-                            WHERE m.movie_id NOT IN (
-                                SELECT r.movie_id 
-                                FROM ratings r 
-                                WHERE r.user_id = %s
-                            )
-                            LIMIT 5
-                        """, (user_id,))
-                        result = cursor.fetchall()
+                        user_id = int(self.path.split("/")[-1])
+                        cursor.callproc("get_user_recommendations", [user_id])
+                        result = []
+                        for res in cursor.stored_results():
+                            result = res.fetchall()
                     else:
                         self.send_error(404, "Invalid endpoint")
                         return
